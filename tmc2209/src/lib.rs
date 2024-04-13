@@ -7,6 +7,7 @@ pub mod reg;
 
 use core::convert::TryFrom;
 use embedded_io as io;
+use embedded_io_async as aio;
 
 #[doc(inline)]
 pub use self::reg::{ReadableRegister, Register, WritableRegister};
@@ -348,6 +349,15 @@ where
     uart_tx.write_all(req.bytes())
 }
 
+pub async fn send_read_request_async<R, U>(slave_addr: u8, uart_tx: &mut U) -> Result<(), U::Error>
+where
+    R: reg::ReadableRegister,
+    U: aio::Write,
+{
+    let req = read_request::<R>(slave_addr);
+    uart_tx.write_all(req.bytes()).await
+}
+
 /// Construct a write access datagram for register `R` of the slave at the given address and
 /// send it via UART.
 ///
@@ -359,6 +369,19 @@ where
 {
     let req = write_request(slave_addr, reg);
     uart_tx.write_all(req.bytes())
+}
+
+pub async fn send_write_request_async<R, U>(
+    slave_addr: u8,
+    reg: R,
+    uart_tx: &mut U,
+) -> Result<(), U::Error>
+where
+    R: WritableRegister,
+    U: aio::Write,
+{
+    let req = write_request(slave_addr, reg);
+    uart_tx.write_all(req.bytes()).await
 }
 
 /// Blocks and attempts to read a response from the given UART receiver.
