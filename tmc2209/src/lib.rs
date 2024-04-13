@@ -6,7 +6,7 @@ extern crate bitfield;
 pub mod reg;
 
 use core::convert::TryFrom;
-use embedded_io::{Read, Write};
+use embedded_io as io;
 
 #[doc(inline)]
 pub use self::reg::{ReadableRegister, Register, WritableRegister};
@@ -342,7 +342,7 @@ where
 pub fn send_read_request<R, U>(slave_addr: u8, uart_tx: &mut U) -> Result<(), U::Error>
 where
     R: reg::ReadableRegister,
-    U: Write,
+    U: io::Write,
 {
     let req = read_request::<R>(slave_addr);
     uart_tx.write_all(req.bytes())
@@ -355,7 +355,7 @@ where
 pub fn send_write_request<R, U>(slave_addr: u8, reg: R, uart_tx: &mut U) -> Result<(), U::Error>
 where
     R: WritableRegister,
-    U: Write,
+    U: io::Write,
 {
     let req = write_request(slave_addr, reg);
     uart_tx.write_all(req.bytes())
@@ -374,7 +374,7 @@ where
 /// method directly to avoid blocking or apply your own timeout logic.
 pub fn await_read_response<U>(uart_rx: &mut U) -> ReadResponse
 where
-    U: Read,
+    U: io::Read,
 {
     let mut reader = Reader::default();
     let mut buf = [0u8; 128];
@@ -404,7 +404,7 @@ where
 pub fn await_read<R, U>(uart_rx: &mut U) -> Result<R, reg::UnknownAddress>
 where
     R: ReadableRegister,
-    U: Read,
+    U: io::Read,
 {
     let res = await_read_response(uart_rx);
     res.register::<R>()
